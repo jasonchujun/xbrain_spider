@@ -10,11 +10,13 @@ class SharePointSpider(scrapy.Spider):
 
     def start_requests(self):
         url_host = "https://ericsson.sharepoint.com/sites/PDURadioChengduFirmware/Shared%20Documents/Forms/AllItems.aspx"
-        yield scrapy.Request(url_host, headers=self.config['headers'], cookies=self.config['cookies'], meta={'cookiejar': 1}, callback=self.parse)
+        yield scrapy.Request(url_host, headers=self.config['headers'], cookies=self.config['cookies'],
+                             meta={'cookiejar': 1}, callback=self.parse)
 
     def parse(self, response):
         url = "https://ericsson.sharepoint.com/sites/PDURadioChengduFirmware/_api/web/GetListUsingPath(DecodedUrl=@a1)/RenderListDataAsStream?@a1='/sites/PDURadioChengduFirmware/Shared Documents'&View=1d04f153-2aa3-4553-b6e2-14b66655e6d4&TryNewExperienceSingle=TRUE"
-        yield scrapy.Request(url=url, method='POST', meta={'cookiejar': response.meta['cookiejar']}, callback=self.parse_dir)
+        yield scrapy.Request(url=url, method='POST', meta={'cookiejar': response.meta['cookiejar']},
+                             callback=self.parse_dir)
 
     def parse_dir(self, response):
         url_dir = "https://ericsson.sharepoint.com/sites/PDURadioChengduFirmware/_api/web/GetListUsingPath(DecodedUrl=@a1)/RenderListDataAsStream?@a1='/sites/PDURadioChengduFirmware/Shared Documents'&RootFolder=/sites/PDURadioChengduFirmware/Shared Documents/2018 TeamBuilding&View=1d04f153-2aa3-4553-b6e2-14b66655e6d4&TryNewExperienceSingle=TRUE"
@@ -34,10 +36,15 @@ class SharePointSpider(scrapy.Spider):
             # dir_list.append(tmp)
 
             if tmp['type'] == 'dir':
-                yield scrapy.Request(url_dir.replace(re.findall("RootFolder=(.*?)&View", url_dir)[0], item['FileRef']), method='POST', meta={'cookiejar': response.meta['cookiejar']}, callback=self.parse_dir)
+                yield scrapy.Request(url_dir.replace(re.findall("RootFolder=(.*?)&View", url_dir)[0], item['FileRef']),
+                                     method='POST', meta={'cookiejar': response.meta['cookiejar']},
+                                     callback=self.parse_dir)
             elif tmp['type'] == 'doc':
                 if tmp['name'].split('.')[1] in ['doc', 'docx', 'xls', 'xlsx', 'csv', 'ppt', 'pptx', 'pdf', 'txt']:
-                    yield scrapy.Request(url_doc.replace(re.findall("UniqueId=(.*?)$", url_doc)[0], tmp['UniqueId']), method='POST', meta={'path': tmp['urlencode'][1:], 'cookiejar': response.meta['cookiejar']}, callback=self.parse_doc)
+                    yield scrapy.Request(url_doc.replace(re.findall("UniqueId=(.*?)$", url_doc)[0], tmp['UniqueId']),
+                                         method='POST',
+                                         meta={'path': tmp['urlencode'][1:], 'cookiejar': response.meta['cookiejar']},
+                                         callback=self.parse_doc)
 
     def parse_doc(self, response):
         path = response.meta['path']
